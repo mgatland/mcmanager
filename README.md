@@ -10,6 +10,7 @@ Start with a Vultr snapshot of your Minecraft server named 'minecraft AUTO 2000'
 
 TODO:
 
+* don't shut down if people are playing
 * schedule start up and shut down
 * Run it as Amazon Lambda functions instead of a heroku server
 * Nicer UI
