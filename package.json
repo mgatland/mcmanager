@@ -1,0 +1,25 @@
+{
+  "name": "mcmanager",
+  "version": "1.0.0",
+  "description": "Minecraft server manager",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mgatland/mcmanager.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mgatland/mcmanager/issues"
+  },
+  "homepage": "https://github.com/mgatland/mcmanager#readme",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "request": "^2.88.0",
+    "vultr": "github:mgatland/node-vultr#develop"
+  }
+}

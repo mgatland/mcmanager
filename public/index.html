@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Vultr control</title>
+  <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+  <h1>Vultr control</h1>
+  <p><i>Startup and shut down can take about 15 minutes :/</i></p>
+  <p class="status">Loading status...</p>
+  <form class="shutdown" action="/shutdown" method="post"><button>Save and shut down</button><div class="shutdownHint"></div></form>
+  <form class="startup" action="/startup" method="post"><button>Start Up</button><div class="startupHint"></div></form>
+  <script>
+    function getStatus () {
+      fetch("/status", { method: 'POST' })
+      .then(response => response.text())
+      .then(text => {
+        document.querySelector('.status').innerHTML = text
+      })
+    }
+    getStatus()
+    setInterval(getStatus, 15000)
+
+    function startUp(e) {
+      e.preventDefault()
+      fetch("/startup", { method: 'POST' })
+      .then(response => response.text())
+      .then(text => {
+        document.querySelector('.startupHint').innerHTML = text
+      })
+    }
+
+    function shutDown(e) {
+      e.preventDefault()
+      fetch("/shutdown", { method: 'POST' })
+      .then(response => response.text())
+      .then(text => {
+        document.querySelector('.shutdownHint').innerHTML = text
+      })
+    }
+
+    document.querySelector(".startup").addEventListener("submit", startUp)
+    document.querySelector(".shutdown").addEventListener("submit", shutDown)
+  </script>
+</body>
+</html>
