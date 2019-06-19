@@ -65,7 +65,7 @@ async function checkAndStartServer () {
     snapshot: mostRecentSnapshot.id,
     os: '164',
     region: '19',
-    plan: '203',
+    plan: '204', //203 is the 2 CPU plan, 204 is 4 CPU
     label: 'minecraft AUTO',
     reserved_ip_v4: '45.76.115.84'
   })
