@@ -2,6 +2,7 @@
 const bodyParser = require('body-parser')
 const express = require('express')
 const Vultr = require('vultr')
+require('dotenv').config()
 
 const app = express()
 
