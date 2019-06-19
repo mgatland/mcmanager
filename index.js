@@ -65,7 +65,7 @@ async function checkAndStartServer () {
     snapshot: mostRecentSnapshot.id,
     os: '164',
     region: '19',
-    plan: '204', //203 is the 2 CPU plan, 204 is 4 CPU
+    plan: '205', // 203 is the 2 CPU plan, 204 is 4 CPU, 205 is 6 CPU 
     label: 'minecraft AUTO',
     reserved_ip_v4: '45.76.115.84'
   })
@@ -84,8 +84,9 @@ async function getMostRecentSnapshot () {
 }
 
 async function isSnapshotReady (name) {
-  const list = await vultrInstance.snapshot.list()
-  return list.some(snapshot => snapshot.description === name)
+  const results = await vultrInstance.snapshot.list()
+  const list = Object.values(results)
+  return list.some(snapshot => snapshot.description === name && snapshot.status === 'complete')
 }
 
 function destroyServer (subId) {
@@ -113,12 +114,13 @@ async function snapshotAndDestroyServer (res) {
   vultrInstance.snapshot.create(subId, snapshotName)
   // check every minute until the snapshot is created, or give up eventually?
   let attempts = 0
-  while (attempts++ < 30) {
+  while (attempts++ < 60) {
     await delayMinutes(1)
     const isReady = await isSnapshotReady(snapshotName)
     if (!isReady) {
       console.log('Still waiting for snapshot (attempt ' + attempts + ')')
     } else {
+      console.log('destroying server')
       destroyServer(subId)
       return
     }
