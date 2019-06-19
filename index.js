@@ -125,7 +125,7 @@ async function snapshotAndDestroyServer (res) {
   console.log("Snapshot took too long to create. I'm giving up (I am not shutting down the server.)")
 }
 
-app.listen(4000)
+app.listen(process.env.PORT || 4000)
 console.log('listening')
 
 // see https://www.npmjs.com/package/vultr
