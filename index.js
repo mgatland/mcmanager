@@ -38,10 +38,10 @@ app.post('/status', async (req, res) => {
     result = `Server is off. Last save was ${timeSinceSave(snapshot)}`
   } else if (server && snapshot.status !== 'complete') {
     result = `Server is shutting down since ${timeSinceSave(snapshot)}`
-  } else if (server && server.status === 'active') {
+  } else if (server && server.status === 'active' && server.server_state === 'ok') {
     result = 'Server is on.'
   } else if (server) {
-    result = `Server is starting up. Status: ${server.status}`
+    result = `Server is starting up. Status: ${server.status}, state: ${server.server_state}`
   } else {
     result = 'Something is wrong.' + JSON.stringify(server) + JSON.stringify(snapshot)
   }
