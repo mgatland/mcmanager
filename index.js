@@ -2,7 +2,14 @@
 const bodyParser = require('body-parser')
 const express = require('express')
 const Vultr = require('vultr')
+const fetch = require('node-fetch')
 require('dotenv').config()
+
+const reservedIp = '45.76.115.84'
+
+//this is getting messy, should be a single state variable
+let shutdownInProgress = false
+let waitingForLogoff = false
 
 const app = express()
 
@@ -37,9 +44,16 @@ app.post('/status', async (req, res) => {
   if (!server && snapshot.status === 'complete') {
     result = `Server is off. Last save was ${timeSinceSave(snapshot)}`
   } else if (server && snapshot.status !== 'complete') {
-    result = `Server is shutting down since ${timeSinceSave(snapshot)}`
+    if (shutdownInProgress) {
+      result = `Server is shutting down since ${timeSinceSave(snapshot)}`
+    } else {
+      result = `Server is taking a snapshot since ${timeSinceSave(snapshot)} but NOT shutting down`
+    }
   } else if (server && server.status === 'active' && server.server_state === 'ok') {
-    result = 'Server is on.'
+    result = 'Server is on. '
+    if (waitingForLogoff) {
+      result += 'A shutdown is scheduled, but someone was online. We\'ll check in < 5 minutes.'
+    }
   } else if (server) {
     result = `Server is starting up. Status: ${server.status}, state: ${server.server_state}`
   } else {
@@ -65,9 +79,9 @@ async function checkAndStartServer () {
     snapshot: mostRecentSnapshot.id,
     os: '164',
     region: '19',
-    plan: '205', // 203 is the 2 CPU plan, 204 is 4 CPU, 205 is 6 CPU 
+    plan: '205', // 203 is the 2 CPU plan, 204 is 4 CPU, 205 is 6 CPU
     label: 'minecraft AUTO',
-    reserved_ip_v4: '45.76.115.84'
+    reserved_ip_v4: reservedIp
   })
   log.push('Creating server. This may take 15 minutes.')
   return log
@@ -107,29 +121,57 @@ async function snapshotAndDestroyServer (res) {
     return
   }
 
+  const wasAnyonePlaying = await isAnyonePlaying()
+  if (wasAnyonePlaying) {
+    console.log('someone is currently playing. (or was in the last 5 minutes.) We will wait 5 minutes before we continue')
+    //This is because the way we get the player count is cached, only refreshed every 5 minutes
+    //So... if someone logged off then pressed 'shut down', we want to make sure the system doesn't think they're still playing
+    //and abort the shut down
+    waitingForLogoff = true
+    await delayMinutes(5)
+    waitingForLogoff = false
+  }
+
   const snapshotName = 'minecraft AUTO ' + (new Date().toISOString())
   console.log('instance ID: ' + subId)
   console.log('Creating snapshot')
   res.send('Creating a snapshot. When this is done, the server will shut down (maybe 15 minutes)')
   vultrInstance.snapshot.create(subId, snapshotName)
   // check every minute until the snapshot is created, or give up eventually?
+  shutdownInProgress = true
   let attempts = 0
+  let activePlayers = false
   while (attempts++ < 60) {
     await delayMinutes(1)
+    activePlayers = activePlayers || await isAnyonePlaying()
     const isReady = await isSnapshotReady(snapshotName)
+    if (activePlayers) {
+      console.log('Cancelling shutdown because someone is playing')
+      shutdownInProgress = false
+      return
+    }
     if (!isReady) {
       console.log('Still waiting for snapshot (attempt ' + attempts + ')')
     } else {
       console.log('destroying server')
       destroyServer(subId)
+      shutdownInProgress = false
       return
     }
   }
   console.log("Snapshot took too long to create. I'm giving up (I am not shutting down the server.)")
+  shutdownInProgress = false
 }
 
 app.listen(process.env.PORT || 4000)
 console.log('listening')
+
+async function isAnyonePlaying () {
+  const response = await fetch('http://mcapi.us/server/status?ip=' + reservedIp)
+  const json = await response.json()
+  console.log(json)
+  return json.players.now > 0
+}
 
 // see https://www.npmjs.com/package/vultr
 
