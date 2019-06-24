@@ -129,7 +129,14 @@ async function snapshotAndDestroyServer (res) {
     //and abort the shut down
     waitingForLogoff = true
     await delayMinutes(5)
+    //fixme: we should res.send a response before 5 minutes is up!
     waitingForLogoff = false
+    const stillPlaying = await isAnyonePlaying()
+    if (stillPlaying) {
+      console.log('aborting snapshot and shutdown due to players online')
+      res.send('shutdown cancelled')
+      return
+    }
   }
 
   const snapshotName = 'minecraft AUTO ' + (new Date().toISOString())
