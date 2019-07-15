@@ -38,7 +38,7 @@ We need to authorize rClone in Dropbox.
 
 ### Step 2:
 
-In your dropbox, create a file called minecraft-server
+In your dropbox, create a folder called minecraft-server
 
 In that folder, copy the file minecraft.service from this repository
 
