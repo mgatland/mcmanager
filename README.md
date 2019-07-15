@@ -1,16 +1,18 @@
 This is unfinished, don't use it
 
-todo:
+must do:
 * !! make dropbox path configurable on heroku side, make default match the path in the instructions + vultr side
+
+should do:
 * get player count directly from server, fixing that 5 minute delay
 
-polish steps:
+could do:
 * Heroku: make the Vultr server type configurable instead of always 16GB of RAM
 * add some kind of security to the heroku server?
-* test that it actually works from scratch
 * add automatic backups
-* maybe remove apt update from the startup script? for faster startup
-* Heroku could create the startup script for you, making the setup a little easier.
+* Heroku could create the startup script for you, so you don't have to set it up separately
+* Heroku could then, via the startup script, also create minecraft.service, putting all the configuration in once place
+* I could make it work without a reserved IP - the admin tool tells you what IP to use
 
 ### Minecraft server manager
 
