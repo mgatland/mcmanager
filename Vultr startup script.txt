@@ -1,0 +1,82 @@
+#!/bin/sh
+
+mcUserPassword=change-this-password!
+dropboxToken=
+dropboxFolder="minecraft-server"
+
+#Minecraft server startup script for Vultr server
+
+# tools:
+# vultr, dropbox, heroku, cron website?
+
+# todo:
+# use variables in this script for
+# * dropbox access token
+# * minecraft user password
+# * dropbox file path
+# also use a variable for dropbox path on the heroku server
+# write full setup instructions including Vultr startup script, cron site
+
+# This actually works
+# but it's only startup - not safe shutdown
+# for safe shutdown we need a way to call rclone to make the backup,
+# then shut down the server. Ideally we'd call minecraft's 'save all' command too.
+# perhaps we could ssh into the server, save all, rclone, then destroy the server
+# then check that that has finished before shutting down
+
+# OK this has a few moving parts so pay attention!
+# We need to set up Vultr with
+# 1. A static IP address
+# 2. A startup script, which includes our Dropbox key
+# to get this, you need to install rclone on a computer that has a web browser and run rclone config and follow the dropbox instructions!!
+	# startup script: change minecraft user password!
+# We need to set up Dropbox with
+# 3. A folder containing the Minecraft utilities + your actual minecraft server and world
+# We need to set up Heroku with
+# 4. The always-on server that lets us start up our sometimes-on Minecraft server
+
+# OK, here is the actual script:
+
+# Apt update.
+apt update && apt -y upgrade
+
+# install rclone
+curl https://rclone.org/install.sh | sudo bash
+
+# install java
+apt install openjdk-8-jre-headless screen -y
+
+# create minecraft user
+useradd -m minecraft
+# set password
+echo "minecraft:$mcUserPassword" | chpasswd
+
+###### change to minecraft user #####################
+sudo -i -u minecraft bash << EOF
+
+# create rclone config file:
+mkdir -p /home/minecraft/.config/rclone/
+cat <<EOT >> /home/minecraft/.config/rclone/rclone.conf
+[dropbox]
+type = dropbox
+token = {"access_token":"$dropboxToken","token_type":"bearer","expiry":"0001-01-01T00:00:00Z"}
+EOT
+
+# download minecraft folder
+# If you're running this by hand, add --progress to see what's happening.
+# This overwrites the local folder with dropbox files. Careful! reversing these arguments will cause data loss!
+rclone sync "dropbox:$dropboxFolder" /home/minecraft/sync
+
+# Switch back to the super user
+EOF
+################################
+
+# install the minecraft service
+cp /home/minecraft/sync/minecraft.service /etc/systemd/system/minecraft.service
+
+# start and enable the service (enable means it will run on startup from now on)
+systemctl start minecraft
+systemctl enable minecraft
+
+# you might have to make some things executable? I didn't?
+# chmod +x /home/minecraft/sync/whatever

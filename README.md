@@ -1,9 +1,16 @@
 This is unfinished, don't use it
 
 todo:
-* include the minecraft.service file and the Vultr startup script
+* !! make dropbox path configurable on heroku side, make default match the path in the instructions + vultr side
+* get player count directly from server, fixing that 5 minute delay
+
+polish steps:
+* Heroku: make the Vultr server type configurable instead of always 16GB of RAM
 * add some kind of security to the heroku server?
 * test that it actually works from scratch
+* add automatic backups
+* maybe remove apt update from the startup script? for faster startup
+* Heroku could create the startup script for you, making the setup a little easier.
 
 ### Minecraft server manager
 
@@ -50,15 +57,11 @@ Inside this folder is your actual Minecraft server. If you already have a Minecr
 
 If this is a brand new server, download server.jar from the official minecraft website and place it in this folder. You also have to create a text file called eula.txt and make its contents 'eula=true' to signify that you agree to the Minecraft licence agreement. All other files will be generated when you first run the server.
 
-* Create a Vultr account (if you don't already have one)
-* In Vultr, create a new Startup Script. Name it 'minecraft 1'
-* Paste in all the code from the Vultr startup script in this folder
-
 ### Step 3
 
 Create a Vultr account.
 
-In Vultr, create a new Startup Script. name it 'minecraft 1' (exactly like that). Copy in the example startup script from this repository.
+In Vultr, create a new Startup Script. name it 'minecraft v1' (exactly like that). Copy in the example startup script from this repository.
 
 Look at the first few lines of the script.
 
