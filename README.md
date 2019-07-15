@@ -1,5 +1,10 @@
 This is unfinished, don't use it
 
+todo:
+* include the minecraft.service file and the Vultr startup script
+* add some kind of security to the heroku server?
+* test that it actually works from scratch
+
 ### Minecraft server manager
 
 So you want to
