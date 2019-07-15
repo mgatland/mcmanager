@@ -3,13 +3,22 @@ const bodyParser = require('body-parser')
 const express = require('express')
 const Vultr = require('vultr')
 const fetch = require('node-fetch')
+const NodeSSH = require('node-ssh')
+
 require('dotenv').config()
+const ssh = new NodeSSH()
 
-const reservedIp = '45.76.115.84'
+const reservedIp = process.env.reservedIp
+const scriptName = 'minecraft v1'
+const instanceName = 'minecraft AUTO'
+const minecraftUserPassword = process.env.minecraftSshPassword
+const apiKey = process.env.vultrKey
+// Dropbox path should also be configured here!!!
 
-//this is getting messy, should be a single state variable
-let shutdownInProgress = false
-let waitingForLogoff = false
+const stateWaiting = 'waiting'
+const stateOK = 'ok'
+
+let state = stateOK
 
 const app = express()
 
@@ -18,11 +27,11 @@ app.use(bodyParser.urlencoded({ extended: true })) // this lets us read POST dat
 app.use(bodyParser.json())
 // app.set('trust proxy', 1); // trust first proxy
 
-const apiKey = process.env.vultrKey
+
 var vultrInstance = new Vultr(apiKey)
 
 app.post('/shutdown', async (req, res) => {
-  snapshotAndDestroyServer(res)
+  saveAndDestroyServer(res)
 })
 
 app.post('/startup', async (req, res) => {
@@ -30,37 +39,24 @@ app.post('/startup', async (req, res) => {
   res.send(status.join('\n'))
 })
 
-function timeSinceSave (snapshot) {
-  const saveDate = new Date(snapshot.description.replace('minecraft AUTO ', ''))
-  const now = new Date()
-  const minutes = Math.floor((now.getTime() - saveDate.getTime()) / 1000 / 60)
-  return minutes + ' minutes ago'
-}
-
 app.post('/status', async (req, res) => {
   const server = await getMinecraftServer()
-  const snapshot = await getMostRecentSnapshot()
   let result = ''
-  if (!server && snapshot.status === 'complete') {
-    result = `Server is off. Last save was ${timeSinceSave(snapshot)}`
-  } else if (server && snapshot.status !== 'complete') {
-    if (shutdownInProgress) {
-      result = `Server is shutting down since ${timeSinceSave(snapshot)}`
-    } else {
-      result = `Server is taking a snapshot since ${timeSinceSave(snapshot)} but NOT shutting down`
-    }
-  } else if (server && server.status === 'active' && server.server_state === 'ok') {
-    result = 'Server is on. '
-    if (waitingForLogoff) {
-      result += 'A shutdown is scheduled, but someone was online. We\'ll check in < 5 minutes.'
-    }
+  if (!server) {
+    result = `Server is off.`
+  } else if (state === stateWaiting) {
+    result += 'A shutdown is scheduled, but someone was online. We\'ll check in < 5 minutes.'
+  } else if (isServerOk(server)) {
+    result = 'Server is on.'
   } else if (server) {
     result = `Server is starting up. Status: ${server.status}, state: ${server.server_state}`
-  } else {
-    result = 'Something is wrong.' + JSON.stringify(server) + JSON.stringify(snapshot)
   }
   res.send(result)
 })
+
+function isServerOk (server) {
+  return server.status === 'active' && server.server_state === 'ok'
+}
 
 async function checkAndStartServer () {
   const log = []
@@ -69,105 +65,97 @@ async function checkAndStartServer () {
     log.push('The server is already running')
     return log
   }
-  const mostRecentSnapshot = await getMostRecentSnapshot()
-  if (mostRecentSnapshot == null) {
-    log.push('There is no snapshot to restore!?')
+  const scriptID = await getScriptID()
+  if (scriptID == null) {
+    log.push('There is no startup script!?')
     return log
   }
-  // region means DCID, 19 means Sydney. os means OSID, 164 is for snapshots. Plan is VPSPLANID
+
   vultrInstance.server.create({
-    snapshot: mostRecentSnapshot.id,
-    os: '164',
-    region: '19',
-    plan: '205', // 203 is the 2 CPU plan, 204 is 4 CPU, 205 is 6 CPU
-    label: 'minecraft AUTO',
+    startupscript: scriptID,
+    os: '338', // OSID, 338 is Ubuntu 19.04
+    region: '19', // DCID, 19 means Sydney
+    plan: '205', // VPSPLANID, 203 is the 2 CPU plan, 204 is 4 CPU, 205 is 6 CPU
+    label: instanceName,
     reserved_ip_v4: reservedIp
   })
-  log.push('Creating server. This may take 15 minutes.')
+  log.push('Creating server. This may take a few minutes.')
   return log
 }
 
 const delayMinutes = minutes => new Promise(resolve => setTimeout(resolve, minutes * 60 * 1000))
 
-async function getMostRecentSnapshot () {
-  const results = await vultrInstance.snapshot.list()
+async function getScriptID () {
+  const results = await vultrInstance.startupscript.list()
   const list = Object.values(results)
-  const best = list.filter(ss => ss.description.indexOf('minecraft AUTO ') > -1).sort((s1, s2) => s1.description < s2.description)[0]
-  console.log('Best snapshot: ' + best.description)
-  return { id: best.SNAPSHOTID, description: best.description, status: best.status }
-}
-
-async function isSnapshotReady (name) {
-  const results = await vultrInstance.snapshot.list()
-  const list = Object.values(results)
-  return list.some(snapshot => snapshot.description === name && snapshot.status === 'complete')
+  const best = list.find(ss => ss.name === scriptName)
+  return best ? best.SCRIPTID : null
 }
 
 function destroyServer (subId) {
   vultrInstance.server.destroy(subId)
 }
 
-async function snapshotAndDestroyServer (res) {
-  const subId = await getMinecraftSubID()
-  if (subId === null) {
+async function saveAndDestroyServer (res) {
+
+  if (state !== stateOK) {
+    console.log('System in weird state ' + state + ', can\'t shut down')
+    res.send('System in weird state ' + state + ', can\'t shut down')
+    return
+  }
+
+  const server = await getMinecraftServer()
+  if (server === null) {
     console.log('No server found')
     res.send('no server found')
     return
   }
-  const oldSnapshot = await getMostRecentSnapshot()
-  if (oldSnapshot.status !== 'complete') {
-    console.log('There is already a save in progress, since ' + timeSinceSave(oldSnapshot))
-    res.send('There is already a save in progress, since ' + timeSinceSave(oldSnapshot))
+  if (!isServerOk(server)) {
+    console.log('server in weird state, aborting: ' + JSON.stringify(server))
+    res.send('server in weird state, aborting: ' + JSON.stringify(server))
     return
   }
 
+  const subId = server.SUBID
+  const serverIp = server.main_ip
+
   const wasAnyonePlaying = await isAnyonePlaying()
   if (wasAnyonePlaying) {
-    console.log('someone is currently playing. (or was in the last 5 minutes.) We will wait 5 minutes before we continue')
+    console.log('someone is currently playing. We will wait 5 minutes before we continue')
     //This is because the way we get the player count is cached, only refreshed every 5 minutes
     //So... if someone logged off then pressed 'shut down', we want to make sure the system doesn't think they're still playing
     //and abort the shut down
-    waitingForLogoff = true
+    state = stateWaiting
     await delayMinutes(5)
-    //fixme: we should res.send a response before 5 minutes is up!
-    waitingForLogoff = false
-    const stillPlaying = await isAnyonePlaying()
-    if (stillPlaying) {
-      console.log('aborting snapshot and shutdown due to players online')
-      res.send('shutdown cancelled')
+    state = stateOK
+
+    const anyonePlaying = await isAnyonePlaying()
+    if (anyonePlaying) {
+      console.log('someone is currently playing. Cancel shutdown.')
+      res.send('someone is currently playing. Cancel shutdown.')
       return
     }
   }
 
-  const snapshotName = 'minecraft AUTO ' + (new Date().toISOString())
-  console.log('instance ID: ' + subId)
-  console.log('Creating snapshot')
-  res.send('Creating a snapshot. When this is done, the server will shut down (maybe 15 minutes)')
-  vultrInstance.snapshot.create(subId, snapshotName)
-  // check every minute until the snapshot is created, or give up eventually?
-  shutdownInProgress = true
-  let attempts = 0
-  let activePlayers = false
-  while (attempts++ < 60) {
-    await delayMinutes(1)
-    activePlayers = activePlayers || await isAnyonePlaying()
-    const isReady = await isSnapshotReady(snapshotName)
-    if (activePlayers) {
-      console.log('Cancelling shutdown because someone is playing')
-      shutdownInProgress = false
-      return
-    }
-    if (!isReady) {
-      console.log('Still waiting for snapshot (attempt ' + attempts + ')')
-    } else {
-      console.log('destroying server')
-      destroyServer(subId)
-      shutdownInProgress = false
-      return
-    }
-  }
-  console.log("Snapshot took too long to create. I'm giving up (I am not shutting down the server.)")
-  shutdownInProgress = false
+  console.log('destroying server')
+  res.send('destroying server')
+  await ssh.connect({
+    host: serverIp,
+    username: 'minecraft',
+    port: 22,
+    password: minecraftUserPassword
+  })
+  const result0 = await ssh.execCommand(`/usr/bin/screen -p 0 -S mc-server -X eval 'stuff "say SERVER SHUTTING DOWN IN 10 SECONDS..."\\015'`)
+  console.log('ssh output: ' + result0.stdout + ' // ' + result0.stderr)
+  const result1 = await ssh.execCommand(`/usr/bin/screen -p 0 -S mc-server -X eval 'stuff "save-all"\\015'`)
+  console.log('ssh output: ' + result1.stdout + ' // ' + result1.stderr)
+  const result2 = await ssh.execCommand(`/bin/sleep 10`)
+  console.log('ssh output: ' + result2.stdout + ' // ' + result2.stderr)
+  const result3 = await ssh.execCommand(`rclone sync /home/minecraft/sync/game "dropbox:i/minecraft backups/latest/game"`)
+  console.log('ssh output: ' + result3.stdout + ' // ' + result3.stderr)
+  console.log('time to destroy the server')
+  destroyServer(subId)
+  state = stateOK
 }
 
 app.listen(process.env.PORT || 4000)
@@ -176,7 +164,6 @@ console.log('listening')
 async function isAnyonePlaying () {
   const response = await fetch('http://mcapi.us/server/status?ip=' + reservedIp)
   const json = await response.json()
-  console.log(json)
   return json.players.now > 0
 }
 
@@ -194,7 +181,7 @@ async function isAnyonePlaying () {
 async function getMinecraftServer () {
   const results = await vultrInstance.server.list()
   const list = Object.values(results)
-  const minecraftServers = list.filter(item => item.label.indexOf('minecraft AUTO') > -1)
+  const minecraftServers = list.filter(item => item.label.indexOf(instanceName) > -1)
   if (minecraftServers.length === 0) {
     console.log('no minecraft instance running')
     return null
