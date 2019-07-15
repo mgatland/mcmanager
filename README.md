@@ -106,3 +106,9 @@ Set up automatic shutdowns. Free Heroku servers turn off when not in use, so we 
 Sign up to cron-job.org
 
 Create a new cron job that goes to https://yourherokudynoname.herokuapp.com/shutdown (put in your actual dyno name!) and change it to a POST request. Schedule it to run every hour, or however often you like. The server won't shut down while people are playing - although there is a bug currently where it will if you've been playing for less than 5 minutes when it checks.
+
+### Step 8
+
+Open Minecraft. Go to the multiplayer menu and add a new server. Paste in your reserved IP address.
+
+You are ready to go!
