@@ -13,6 +13,7 @@ const scriptName = 'minecraft v1'
 const instanceName = 'minecraft AUTO'
 const minecraftUserPassword = process.env.minecraftSshPassword
 const apiKey = process.env.vultrKey
+const dropboxFolder = process.env.dropboxFolder || 'minecraft-server'
 // Dropbox path should also be configured here!!!
 
 const stateWaiting = 'waiting'
@@ -84,8 +85,6 @@ async function checkAndStartServer () {
   return log
 }
 
-const delayMinutes = minutes => new Promise(resolve => setTimeout(resolve, minutes * 60 * 1000))
-
 async function getScriptID () {
   const results = await vultrInstance.startupscript.list()
   const list = Object.values(results)
@@ -136,13 +135,13 @@ async function saveAndDestroyServer (res) {
     password: minecraftUserPassword
   })
   const result0 = await ssh.execCommand(`/usr/bin/screen -p 0 -S mc-server -X eval 'stuff "say SERVER SHUTTING DOWN IN 10 SECONDS..."\\015'`)
-  console.log('ssh output: ' + result0.stdout + ' // ' + result0.stderr)
+  console.log('ssh output after notify: ' + result0.stdout + ' // ' + result0.stderr)
   const result1 = await ssh.execCommand(`/usr/bin/screen -p 0 -S mc-server -X eval 'stuff "save-all"\\015'`)
-  console.log('ssh output: ' + result1.stdout + ' // ' + result1.stderr)
+  console.log('ssh output after save-all: ' + result1.stdout + ' // ' + result1.stderr)
   const result2 = await ssh.execCommand(`/bin/sleep 10`)
-  console.log('ssh output: ' + result2.stdout + ' // ' + result2.stderr)
-  const result3 = await ssh.execCommand(`rclone sync /home/minecraft/sync/game "dropbox:i/minecraft backups/latest/game"`)
-  console.log('ssh output: ' + result3.stdout + ' // ' + result3.stderr)
+  console.log('ssh output after sleep 10: ' + result2.stdout + ' // ' + result2.stderr)
+  const result3 = await ssh.execCommand(`rclone sync /home/minecraft/sync/game "dropbox:${dropboxFolder}"`)
+  console.log('ssh output after rclone: ' + result3.stdout + ' // ' + result3.stderr)
   console.log('time to destroy the server')
   destroyServer(subId)
   state = stateOK

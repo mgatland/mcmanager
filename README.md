@@ -1,20 +1,19 @@
 This is unfinished, don't use it
 
 must do:
-* !! make dropbox path configurable on heroku side, make default match the path in the instructions + vultr side
+* [x] make dropbox path configurable on heroku side, make default match the path in the instructions + vultr side
 
 should do:
-* add in a safety check so you don't wipe your dropbox
+* add in a safety check so you can't wipe your dropbox by setting a bad dropboxFolder
 - [x] get player count directly from server, fixing that 5 minute delay
-
 
 could do:
 * Heroku: make the Vultr server type configurable instead of always 16GB of RAM
-* add some kind of security to the heroku server?
 * add automatic backups
+* I could make it work without a reserved IP - the admin tool could tell you the current IP of the server
+* add some kind of security to the heroku server?
 * Heroku could create the startup script for you, so you don't have to set it up separately
 * Heroku could then, via the startup script, also create minecraft.service, putting all the configuration in once place
-* I could make it work without a reserved IP - the admin tool tells you what IP to use
 
 ### Minecraft server manager
 
@@ -92,6 +91,7 @@ Under Settings, set these environment variables:
 * reservedIp: your reserved IP address
 * minecraftSshPassword: the password you chose in step 3 above.
 * vultrKey: go to vultr.com, click on your name in the top right, choose API, create a personal access token, then put it in here.
+* _You you can set *dropboxFolder* here if you changed it from the default value in the startup script. If you didn't change it there, don't set it here._
 
 Go into Deploy and connect it to GitHub. Make it deploy from your fork of this repository. Find the 'Deploy Branch' button to deploy it now.
 
