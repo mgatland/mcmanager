@@ -6,6 +6,10 @@ dropboxFolder="minecraft-server"
 
 #Minecraft server startup script for Vultr server
 
+# Use local AU apt-get sources
+# commented out because it seemed to cause failures
+# sed -i 's|//archive.|//au.archive.|g' /etc/apt/sources.list
+
 # Apt update.
 apt update && apt -y upgrade
 
