@@ -1,11 +1,10 @@
 
 
 must do:
-* [x] make dropbox path configurable on heroku side, make default match the path in the instructions + vultr side
+  (all done!)
 
 should do:
 * add in a safety check so you can't wipe your dropbox by setting a bad dropboxFolder
-- [x] get player count directly from server, fixing that 5 minute delay
 
 could do:
 * Heroku: make the Vultr server type configurable instead of always 16GB of RAM
@@ -13,7 +12,7 @@ could do:
 * I could make it work without a reserved IP - the admin tool could tell you the current IP of the server
 * add some kind of security to the heroku server?
 * Heroku could create the startup script for you, so you don't have to set it up separately
-* Heroku could then, via the startup script, also create minecraft.service, putting all the configuration in once place
+* Heroku could also create minecraft.service. That way, all the configuration is in one place
 
 ### Minecraft server manager
 
@@ -91,7 +90,7 @@ Under Settings, set these environment variables:
 * reservedIp: your reserved IP address
 * minecraftSshPassword: the password you chose in step 3 above.
 * vultrKey: go to vultr.com, click on your name in the top right, choose API, create a personal access token, then put it in here.
-* _You you can set *dropboxFolder* here if you changed it from the default value in the startup script. If you didn't change it there, don't set it here._
+* You don't need to set *dropboxFolder*, unless you move your Minecraft server files somewhere else in your Dropbox.
 
 Go into Deploy and connect it to GitHub. Make it deploy from your fork of this repository. Find the 'Deploy Branch' button to deploy it now.
 
@@ -101,15 +100,15 @@ You can now visit your heroku app in a web browser (click 'Open App' in the very
 
 From here, you can start and stop the server.
 
-If someone is playing, and has been on for more than 5 minutes, you will not be able to stop the server until they log off.
+If someone is playing you will not be able to stop the server until they log off.
 
 ### Step 7
 
-Set up automatic shutdowns. Free Heroku servers turn off when not in use, so we need another service to do scheduled shutdowns.
+Set up automatic shutdowns. Free Heroku servers turn off when not in use, so cannot run scheduled tasks. We need another service.
 
 Sign up to cron-job.org
 
-Create a new cron job that goes to https://yourherokudynoname.herokuapp.com/shutdown (put in your actual dyno name!) and change it to a POST request. Schedule it to run every hour, or however often you like. The server won't shut down while people are playing - although there is a bug currently where it will if you've been playing for less than 5 minutes when it checks.
+Create a new cron job that goes to https://your-heroku-dyno-name.herokuapp.com/shutdown (put in your actual Heroku app URL!) and change it to a POST request. Schedule it to run every hour, or however often you like. The shut down won't happen while people are playing.
 
 ### Step 8
 
