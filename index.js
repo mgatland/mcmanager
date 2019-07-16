@@ -2,8 +2,8 @@
 const bodyParser = require('body-parser')
 const express = require('express')
 const Vultr = require('vultr')
-const fetch = require('node-fetch')
 const NodeSSH = require('node-ssh')
+const minecraftStatus = require('mc-server-status')
 
 require('dotenv').config()
 const ssh = new NodeSSH()
@@ -48,6 +48,7 @@ app.post('/status', async (req, res) => {
     result += 'A shutdown is scheduled, but someone was online. We\'ll check in < 5 minutes.'
   } else if (isServerOk(server)) {
     result = 'Server is on.'
+    // It would be nice to get the player count here but the request to get it is quite slow.
   } else if (server) {
     result = `Server is starting up. Status: ${server.status}, state: ${server.server_state}`
   }
@@ -119,22 +120,11 @@ async function saveAndDestroyServer (res) {
   const subId = server.SUBID
   const serverIp = server.main_ip
 
-  const wasAnyonePlaying = await isAnyonePlaying()
-  if (wasAnyonePlaying) {
-    console.log('someone is currently playing. We will wait 5 minutes before we continue')
-    //This is because the way we get the player count is cached, only refreshed every 5 minutes
-    //So... if someone logged off then pressed 'shut down', we want to make sure the system doesn't think they're still playing
-    //and abort the shut down
-    state = stateWaiting
-    await delayMinutes(5)
-    state = stateOK
-
-    const anyonePlaying = await isAnyonePlaying()
-    if (anyonePlaying) {
-      console.log('someone is currently playing. Cancel shutdown.')
-      res.send('someone is currently playing. Cancel shutdown.')
-      return
-    }
+  const anyonePlaying = await isAnyonePlaying(serverIp)
+  if (anyonePlaying) {
+    console.log('someone is currently playing. Cancelling shutdown.')
+    res.send('someone is currently playing. Cancelling shutdown.')
+    return
   }
 
   console.log('destroying server')
@@ -161,10 +151,13 @@ async function saveAndDestroyServer (res) {
 app.listen(process.env.PORT || 4000)
 console.log('listening')
 
-async function isAnyonePlaying () {
-  const response = await fetch('http://mcapi.us/server/status?ip=' + reservedIp)
-  const json = await response.json()
-  return json.players.now > 0
+async function isAnyonePlaying (serverIp) {
+  try {
+    const data = await minecraftStatus.getStatus(serverIp)
+    return data.players.online > 0
+  } catch (e) {
+    return false
+  }
 }
 
 // see https://www.npmjs.com/package/vultr

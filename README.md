@@ -4,7 +4,9 @@ must do:
 * !! make dropbox path configurable on heroku side, make default match the path in the instructions + vultr side
 
 should do:
-* get player count directly from server, fixing that 5 minute delay
+* add in a safety check so you don't wipe your dropbox
+- [x] get player count directly from server, fixing that 5 minute delay
+
 
 could do:
 * Heroku: make the Vultr server type configurable instead of always 16GB of RAM
