@@ -1,4 +1,4 @@
-This is unfinished, don't use it
+
 
 must do:
 * [x] make dropbox path configurable on heroku side, make default match the path in the instructions + vultr side
