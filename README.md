@@ -5,6 +5,8 @@ must do:
 
 should do:
 * add in a safety check so you can't wipe your dropbox by setting a bad dropboxFolder
+* another possible data loss situation: if you shut down the server while it's starting up
+(Although in both of these cases, you can use Dropbox Rewind to recover the lost data)
 
 could do:
 * Heroku: make the Vultr server type configurable instead of always 16GB of RAM
