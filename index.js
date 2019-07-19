@@ -48,7 +48,8 @@ app.post('/status', async (req, res) => {
   } else if (state === stateWaiting) {
     result += 'A shutdown is scheduled, but someone was online. We\'ll check in < 5 minutes.'
   } else if (isServerOk(server)) {
-    result = 'Server is on.'
+    const createdDate = new Date(server.date_created + '+00:00').toLocaleString()
+    result = 'Server is on. (since ' + createdDate + ')'
     // It would be nice to get the player count here but the request to get it is quite slow.
   } else if (server) {
     result = `Server is starting up. Status: ${server.status}, state: ${server.server_state}`
