@@ -78,7 +78,7 @@ async function checkAndStartServer () {
     startupscript: scriptID,
     os: '338', // OSID, 338 is Ubuntu 19.04
     region: '19', // DCID, 19 means Sydney
-    plan: '204', // VPSPLANID, 203 is 2 CPU / 4 GB, 204 is 4 CPU / 8 GB, 205 is 6 CPU / 16 GB
+    plan: '205', // VPSPLANID, 203 is 2 CPU / 4 GB, 204 is 4 CPU / 8 GB, 205 is 6 CPU / 16 GB
     label: instanceName,
     reserved_ip_v4: reservedIp
   })
