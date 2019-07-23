@@ -1,0 +1,22 @@
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.buttons {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+button {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 6px;
+  line-height: 2em;
+  border: 2px outset white;
+  outline: 2px solid black;
+  background-color: #eee;
+  color: #555;
+}

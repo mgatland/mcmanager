@@ -28,8 +28,7 @@ app.use(bodyParser.urlencoded({ extended: true })) // this lets us read POST dat
 app.use(bodyParser.json())
 // app.set('trust proxy', 1); // trust first proxy
 
-
-var vultrInstance = new Vultr(apiKey)
+const vultrInstance = new Vultr(apiKey)
 
 app.post('/shutdown', async (req, res) => {
   saveAndDestroyServer(res)
@@ -98,7 +97,6 @@ function destroyServer (subId) {
 }
 
 async function saveAndDestroyServer (res) {
-
   if (state !== stateOK) {
     console.log('System in weird state ' + state + ', can\'t shut down')
     res.send('System in weird state ' + state + ', can\'t shut down')
