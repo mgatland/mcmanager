@@ -16,11 +16,6 @@ const apiKey = process.env.vultrKey
 const dropboxFolder = process.env.dropboxFolder || 'minecraft-server'
 // Dropbox path should also be configured here!!!
 
-const stateWaiting = 'waiting'
-const stateOK = 'ok'
-
-let state = stateOK
-
 const app = express()
 
 app.use(express.static(`${__dirname}/public`)) // look in the public folder. If it's there, give it to them.
@@ -41,28 +36,30 @@ app.post('/startup', async (req, res) => {
 
 app.post('/status', async (req, res) => {
   const server = await getMinecraftServer()
-  let result = ''
+  let actionsAllowed
+  let message = ''
   if (!server) {
-    result = `Server is off.`
-  } else if (state === stateWaiting) {
-    result += 'A shutdown is scheduled, but someone was online. We\'ll check in < 5 minutes.'
+    message = `Server is off.`
+    actionsAllowed = 'start'
   } else if (isServerOk(server)) {
-    const createdDate = new Date(server.date_created + '+00:00').toLocaleString()
-    result = 'Server is on. (since ' + createdDate + ')'
+    const createdDate = new Date(server.date_created + '+00:00').toISOString()
+    message = 'Server is on. (since {' + createdDate + '})'
     // It would be nice to get the player count here but the request to get it is quite slow.
+    actionsAllowed = 'stop'
   } else if (server) {
-    result = `Server is starting up. Status: ${server.status}, state: ${server.server_state}`
+    message = `Server is starting up. Status: ${server.status}, state: ${server.server_state}`
+    actionsAllowed = 'none'
     if (server.server_state === 'installingbooting') {
       // Special case: Vultr servers report 'installingbooting' for minutes after Minecraft has actually started!
       // So let's do the very slow check to see if Minecraft is running.
       const serverIp = server.main_ip
       const data = await minecraftStatus.getStatus(serverIp).catch(e => {})
       if (data) {
-        result = 'Server is on. (*)'
+        message = 'Server is on. (...)'
       }
     }
   }
-  res.send(result)
+  res.send({ message, actionsAllowed })
 })
 
 function isServerOk (server) {
@@ -106,12 +103,6 @@ function destroyServer (subId) {
 }
 
 async function saveAndDestroyServer (res) {
-  if (state !== stateOK) {
-    console.log('System in weird state ' + state + ', can\'t shut down')
-    res.send('System in weird state ' + state + ', can\'t shut down')
-    return
-  }
-
   const server = await getMinecraftServer()
   if (server === null) {
     console.log('No server found')
@@ -152,7 +143,6 @@ async function saveAndDestroyServer (res) {
   console.log('ssh output after rclone: ' + result3.stdout + ' // ' + result3.stderr)
   console.log('time to destroy the server')
   destroyServer(subId)
-  state = stateOK
 }
 
 app.listen(process.env.PORT || 4000)
@@ -187,7 +177,7 @@ async function getMinecraftServer () {
     return null
   }
   if (minecraftServers.length === 1) {
-    console.log('found the running minecraft instance')
+    // console.log('found the running minecraft instance')
     return list[0]
   }
   console.log('Error: There is more than one minecraft server')

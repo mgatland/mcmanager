@@ -12,16 +12,33 @@
   <h1>Vultr control</h1>
   <p class="status">Loading status...</p>
   <div class="buttons">
-    <form class="shutdown" action="/shutdown" method="post"><button>Save and shut down</button><div class="shutdownHint"></div></form>
-    <form class="startup" action="/startup" method="post"><button>Start Up</button><div class="startupHint"></div></form>
+    <form class="shutdown hidden" action="/shutdown" method="post"><button>Save and shut down</button></form>
+    <form class="startup hidden" action="/startup" method="post"><button>Start Up</button></div></form>
   </div>
   <p class='note'>Startup takes about 6 minutes.</p>
+  <p>---</p>
+  <div class="hint"></div>
 <script>
+
+    function addMessage (message) {
+      document.querySelector('.hint').innerHTML += `<p>${message}</p>`
+    }
+
     function getStatus () {
       fetch("/status", { method: 'POST' })
-      .then(response => response.text())
-      .then(text => {
-        document.querySelector('.status').innerHTML = text
+      .then(response => response.json())
+      .then(json => {
+        let { message, actionsAllowed } = json
+        // Hack to show time as local
+        const timeStamp = message.match('{(.*)}')
+        if (timeStamp) {
+          message = message.replace(timeStamp[0], new Date(timeStamp[1]).toLocaleString())  
+        }
+
+        document.querySelector('.status').innerHTML = message
+        document.querySelector('.startup').classList.toggle('hidden', actionsAllowed !== 'start')
+        document.querySelector('.shutdown').classList.toggle('hidden', actionsAllowed !== 'stop')
+
       })
     }
     getStatus()
@@ -32,7 +49,7 @@
       fetch("/startup", { method: 'POST' })
       .then(response => response.text())
       .then(text => {
-        document.querySelector('.startupHint').innerHTML = text
+        addMessage(text)
       })
     }
 
@@ -41,7 +58,7 @@
       fetch("/shutdown", { method: 'POST' })
       .then(response => response.text())
       .then(text => {
-        document.querySelector('.shutdownHint').innerHTML = text
+        addMessage(text)
       })
     }
 
