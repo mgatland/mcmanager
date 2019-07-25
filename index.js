@@ -87,7 +87,7 @@ async function checkAndStartServer () {
     label: instanceName,
     reserved_ip_v4: reservedIp
   })
-  log.push('Creating server. This may take a few minutes.')
+  log.push('Creating server.')
   return log
 }
 
@@ -157,16 +157,9 @@ async function isAnyonePlaying (serverIp) {
   }
 }
 
-// see https://www.npmjs.com/package/vultr
+// Ideally, I would update a cloudflare DNS record instead of having a static IP.
 
-// then i need 'start up server'
-// find the snapshot with the highest id
-// start a server using that
-// get its ip address
-// tell the user. Ideally, update cloudflare
-// https://support.cloudflare.com/hc/en-us/articles/360020524512-Manage-dynamic-IPs-in-Cloudflare-DNS-programmatically
-
-// then i need a web ui for these two functions, also a 'is server running' display
+// https://api.cloudflare.com/#dns-records-for-a-zone-update-dns-record
 
 async function getMinecraftServer () {
   const results = await vultrInstance.server.list()
