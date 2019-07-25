@@ -52,6 +52,15 @@ app.post('/status', async (req, res) => {
     // It would be nice to get the player count here but the request to get it is quite slow.
   } else if (server) {
     result = `Server is starting up. Status: ${server.status}, state: ${server.server_state}`
+    if (server.server_state === 'installingbooting') {
+      // Special case: Vultr servers report 'installingbooting' for minutes after Minecraft has actually started!
+      // So let's do the very slow check to see if Minecraft is running.
+      const serverIp = server.main_ip
+      const data = await minecraftStatus.getStatus(serverIp).catch(e => {})
+      if (data) {
+        result = 'Server is on. (*)'
+      }
+    }
   }
   res.send(result)
 })

@@ -15,7 +15,7 @@
     <form class="shutdown" action="/shutdown" method="post"><button>Save and shut down</button><div class="shutdownHint"></div></form>
     <form class="startup" action="/startup" method="post"><button>Start Up</button><div class="startupHint"></div></form>
   </div>
-  <p><i>Startup takes about 10 minutes</i></p>
+  <p><i>Startup takes about 6 minutes</i></p>
 <script>
     function getStatus () {
       fetch("/status", { method: 'POST' })
