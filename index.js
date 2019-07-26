@@ -25,6 +25,8 @@ app.use(bodyParser.json())
 
 const vultrInstance = new Vultr(apiKey)
 
+const cache = { playerCount: 'unknown', lastUpdate: undefined }
+
 app.post('/shutdown', async (req, res) => {
   saveAndDestroyServer(res)
 })
@@ -43,8 +45,7 @@ app.post('/status', async (req, res) => {
     actionsAllowed = 'start'
   } else if (isServerOk(server)) {
     const createdDate = new Date(server.date_created + '+00:00').toISOString()
-    message = 'Server is on. (since {' + createdDate + '})'
-    // It would be nice to get the player count here but the request to get it is quite slow.
+    message = 'Server is on. (since {' + createdDate + '}). Players: ' + useCachedPlayerCount(server.main_ip)
     actionsAllowed = 'stop'
   } else if (server) {
     message = `Server is starting up. Status: ${server.status}, state: ${server.server_state}`
@@ -53,9 +54,9 @@ app.post('/status', async (req, res) => {
       // Special case: Vultr servers report 'installingbooting' for minutes after Minecraft has actually started!
       // So let's do the very slow check to see if Minecraft is running.
       const serverIp = server.main_ip
-      const data = await minecraftStatus.getStatus(serverIp).catch(e => {})
+      const data = await getAndCacheMinecraftStatus(serverIp)
       if (data) {
-        message = 'Server is on. (...)'
+        message = 'Server is on. (Just started.) Players: ' + useCachedPlayerCount(serverIp)
       }
     }
   }
@@ -149,12 +150,8 @@ app.listen(process.env.PORT || 4000)
 console.log('listening')
 
 async function isAnyonePlaying (serverIp) {
-  try {
-    const data = await minecraftStatus.getStatus(serverIp)
-    return data.players.online > 0
-  } catch (e) {
-    return false
-  }
+  const data = await getAndCacheMinecraftStatus(serverIp)
+  return data && data.players.online > 0
 }
 
 // Ideally, I would update a cloudflare DNS record instead of having a static IP.
@@ -182,4 +179,23 @@ async function getMinecraftSubID () {
   const server = await getMinecraftServer()
   if (server) return server.SUBID
   return null
+}
+
+async function getAndCacheMinecraftStatus (serverIp) {
+  // Setting the time first, instead of afterwards, prevents requests piling up
+  cache.lastUpdate = new Date()
+  const status = await minecraftStatus.getStatus(serverIp).catch(e => {})
+  if (status) {
+    cache.playerCount = status.players.online
+  } else {
+    cache.playerCount = 0
+  }
+  return status
+}
+
+function useCachedPlayerCount (serverIp) {
+  if (!cache.lastUpdate || (new Date() - cache.lastUpdate) < 1000 * 60) {
+    getAndCacheMinecraftStatus(serverIp) // but don't await it
+  }
+  return cache.playerCount
 }
