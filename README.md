@@ -130,6 +130,7 @@ could do:
 * add some kind of security to the heroku server?
 * Heroku could create the startup script for you, so you don't have to set it up separately
 * Heroku could also create minecraft.service. That way, all the configuration is in one place
+* Instead of using a cron service for shutdowns, install a service on the minecraft server that does that job. This will simplify setup, and make the system use fewer of your Heroku minutes
 
 super deluxe:
 * The Heroku control panel could spoof the Minecraft server protocol. We could make it so the when the server is off, it still appears in the Minecraft server browser and when you try to join, the server starts up!

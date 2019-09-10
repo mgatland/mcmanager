@@ -4,20 +4,28 @@ mcUserPassword=change-this-password!
 dropboxToken=
 dropboxFolder="minecraft-server"
 
-#Minecraft server startup script for Vultr server
+# Minecraft server startup script for Vultr server
 
-# Use local AU apt-get sources
-# commented out because it seemed to cause failures
-# sed -i 's|//archive.|//au.archive.|g' /etc/apt/sources.list
+javaUsrLib=/usr/lib/jvm
 
-# Apt update.
-apt update && apt -y upgrade
+now=$(date +"%T")
+echo "install rclone: $now"
 
 # install rclone
 curl https://rclone.org/install.sh | sudo bash
 
-# install java
-apt install openjdk-8-jre-headless screen -y
+now=$(date +"%T")
+echo "install java: $now"
+
+curl https://download.java.net/java/GA/jdk12.0.2/e482c34c86bd4bf8b56c0b35558996b9/10/GPL/openjdk-12.0.2_linux-x64_bin.tar.gz --output openjdk.tar.gz
+
+tar -zxvf openjdk.tar.gz
+mv -f jdk-12.0.2/ $javaUsrLib/
+ln -s $javaUsrLib/bin/java /usr/bin/java
+
+
+now=$(date +"%T")
+echo "downloading the world: $now"
 
 # create minecraft user
 useradd -m minecraft
@@ -43,6 +51,9 @@ rclone sync "dropbox:$dropboxFolder" /home/minecraft/sync
 # Switch back to the super user
 EOF
 ################################
+
+now=$(date +"%T")
+echo "creating service: $now"
 
 # install the minecraft service
 cp /home/minecraft/sync/minecraft.service /etc/systemd/system/minecraft.service
