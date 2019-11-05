@@ -54,7 +54,7 @@ In Vultr, create a new Startup Script. name it `minecraft v1` (exactly like that
 
 Look at the first few lines of the script.
 
-* You must change the password to a secure password
+* You must change the password to a secure password (make it long and random)
 * You must insert the dropbox token that you saved earlier
 * You don't need to change the dropboxFolder, unless you move your Minecraft server files somewhere else in your Dropbox.
 
