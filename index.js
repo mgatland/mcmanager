@@ -82,7 +82,7 @@ async function checkAndStartServer () {
 
   vultrInstance.server.create({
     startupscript: scriptID,
-    os: '338', // OSID, 338 is Ubuntu 19.04
+    os: '365', // OSID, 365 is Ubuntu 19.10, 338 is Ubuntu 19.04
     region: '19', // DCID, 19 means Sydney
     plan: '403', // VPSPLANID, 203 is 2 CPU / 4 GB, 204 is 4 CPU / 8 GB, 205 is 6 CPU / 16 GB
     // new High frequency plans: 402 -> 2 CPU 4GB ram, 403 -> 3 CPU, 404 -> 4 CPU (expensive)
