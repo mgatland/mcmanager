@@ -10,7 +10,7 @@ const ssh = new NodeSSH()
 
 const reservedIp = process.env.reservedIp
 const scriptName = 'minecraft v1'
-const instanceName = 'minecraft AUTO'
+const instanceName = 'minecraft_AUTO'
 const minecraftUserPassword = process.env.minecraftSshPassword
 const apiKey = process.env.vultrKey
 const dropboxFolder = process.env.dropboxFolder || 'minecraft-server'
