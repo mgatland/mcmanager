@@ -15,20 +15,20 @@ We're going to use:
 * Vultr: affordable pay-by-the-minute hosting
 * Dropbox: free online storage
 * Heroku: free hosting for our admin tools
-* A cron service for scheduled shutdowns
+* cron-job.org: automatically shut down the server when no-one is playing
 
 ### Step 1:
 
 * Create a Dropbox account if you don't already have one
 
-We need to authorize rClone in Dropbox.
+We need to authorize rClone in Dropbox and get its access token.
 
 * Install rClone following the instructions at rclone.org
 * Open a command prompt and run `rclone config`
 * Choose Dropbox and follow the instructions to set up access
 * Now run `rclone config file`, it will tell you where the config file is
-* Find that file, grab the value of the access_token, you'll need it later.
-* You can uninstall rClone now, we won't be using it on your computer
+* Find that file and take note of the value of the access_token. You'll need it later.
+* You can uninstall rClone now. We won't be using it on your computer
 
 ### Step 2:
 
@@ -38,11 +38,11 @@ In your dropbox folder, create a new folder called _minecraft-server_
 
 In _minecraft-server_, copy the file minecraft.service from this repository
 
-Edit minecraft.service: On the line that has `-Xmx15000M -Xms15000M`, replace both instances of 15000 with the amount of RAM you want to allocate to Minecraft. This should be about 300 Megabytes less than the total RAM on your server.
+Edit minecraft.service: On the line that has `-Xmx15000M -Xms15000M`, replace both instances of 15000 with the amount of RAM you want to allocate to Minecraft. This should be about 300 Megabytes less than the total RAM on your server. *You will have to update this whenever you change your server plan.*
 
 In the minecraft-server folder, create another folder named 'game'
 
-Inside this folder is your actual Minecraft server. If you already have a Minecraft server folder, copy its contents into here. Make sure the server file is named server.jar
+Inside this folder is your actual Minecraft server. If you already have a Minecraft server folder, copy its contents into here. The server file should be named server.jar. If it isn't, rename it to server.jar.
 
 If this is a brand new server, download server.jar from the official minecraft website and place it in this folder. You also have to create a text file called eula.txt and make its contents `eula=true` to signify that you agree to the Minecraft licence agreement. All other files will be generated when you first run the server.
 
@@ -50,13 +50,13 @@ If this is a brand new server, download server.jar from the official minecraft w
 
 Create a Vultr account.
 
-In Vultr, create a new Startup Script. name it `minecraft v1` (exactly like that). Copy in the example startup script from this repository.
+In Vultr, create a new Startup Script. name it `minecraft v1` (you must use this exact name!). Copy in the example startup script from this repository.
 
 Look at the first few lines of the script.
 
 * You must change the password to a secure password (make it long and random)
-* You must insert the dropbox token that you saved earlier
-* You don't need to change the dropboxFolder, unless you move your Minecraft server files somewhere else in your Dropbox.
+* You must insert the dropbox token that you took from your rclone configuration earlier
+* dropboxFolder should point to the subfolder we created in your Dropbox folder. If you followed these instructions and named the folder 'minecraft-server' then this value is already correct and you don't need to change it.
 
 Save the script.
 
@@ -64,9 +64,9 @@ Save the script.
 
 In Vultr, create a new Reserved IP. This will cost you $5 USD per month.
 
-(This makes it easier for everyone to join the server because the IP is always the same. I might change to a cheaper system later.)
+(This makes it easier for everyone to join the server because the IP is always the same. There are cheaper ways to solve this problem but I haven't implemented them yet. Sorry.)
 
-Write down what your reserved IP address is, you will need it.
+Write down what your reserved IP address is, you will need it later.
 
 ### Step 5
 
@@ -78,12 +78,12 @@ In Heroku, create a new free Dyno. Give it a cool name.
 
 Under Settings, set these environment variables:
 
-* reservedIp: your Vultr reserved IP address
+* reservedIp: your Vultr reserved IP address from step 4 above.
 * minecraftSshPassword: the secure password you chose in step 3 above.
 * vultrKey: go to vultr.com, click on your name in the top right, choose API, create a personal access token, then put it in here.
-* You don't need to set *dropboxFolder*, unless you move your Minecraft server files somewhere else in your Dropbox.
+* You can set *dropboxFolder* to the folder in your Dropbox folder where the server files are, but you don't need to set it if you used the default value.
 
-Go into Deploy and connect it to GitHub. Make it deploy from your fork of this repository. Find the 'Deploy Branch' button to deploy it now.
+Go into Deploy and connect it to GitHub. Make it deploy from your fork of this repository. Press the 'Deploy Branch' button to deploy it now.
 
 ### Step 6
 
@@ -130,7 +130,7 @@ could do:
 * add some kind of security to the heroku server?
 * Heroku could create the startup script for you, so you don't have to set it up separately
 * Heroku could also create minecraft.service. That way, all the configuration is in one place
-* Instead of using a cron service for shutdowns, install a service on the minecraft server that does that job. This will simplify setup, and make the system use fewer of your Heroku minutes
+* Instead of using a cron service for shutdowns, install a service on the minecraft server that does that job. This will simplify setup, and make the system use fewer of your free Heroku minutes
 
 super deluxe:
 * The Heroku control panel could spoof the Minecraft server protocol. We could make it so the when the server is off, it still appears in the Minecraft server browser and when you try to join, the server starts up!
