@@ -2,7 +2,7 @@
 const bodyParser = require('body-parser')
 const express = require('express')
 const Vultr = require('vultr')
-const NodeSSH = require('node-ssh')
+const {NodeSSH} = require('node-ssh')
 const minecraftStatus = require('mc-server-status')
 
 require('dotenv').config()
@@ -80,16 +80,19 @@ async function checkAndStartServer () {
     return log
   }
 
-  vultrInstance.server.create({
+  log.push('Creating server.')
+  await vultrInstance.server.create({
     startupscript: scriptID,
     os: '270', // OSID, 270 is ubuntu 18.04 LTS
     region: '40', // DCID, 19 means Sydney, 40 means Singapore
-    plan: '402', // VPSPLANID, 203 is 2 CPU / 4 GB, 204 is 4 CPU / 8 GB, 205 is 6 CPU / 16 GB
+    plan: '408', // VPSPLANID, 203 is 2 CPU / 4 GB, 204 is 4 CPU / 8 GB, 205 is 6 CPU / 16 GB
     // new High frequency plans: 402 -> 2 CPU 4GB ram, 403 -> 3 CPU, 404 -> 4 CPU (expensive)
+    // 408 = 2 cpu, 2 GM of ram $18/month, was highest available currently
     label: instanceName,
     reserved_ip_v4: reservedIp
+  }).catch(e => {
+    log.push(e)
   })
-  log.push('Creating server.')
   return log
 }
 
