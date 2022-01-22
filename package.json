@@ -22,7 +22,7 @@
     "dotenv": "^8.0.0",
     "express": "^4.16.4",
     "mc-server-status": "^0.2.0",
-    "node-fetch": "^2.6.6",
+    "node-fetch": "^3.1.1",
     "node-ssh": "^12.0.2",
     "request": "^2.88.0",
     "vultr": "github:mgatland/node-vultr#develop"
