@@ -45,10 +45,10 @@ app.post('/status', async (req, res) => {
     actionsAllowed = 'start'
   } else if (isServerOk(server)) {
     const createdDate = new Date(server.date_created + '+00:00').toISOString()
-    message = 'Server is on. (since {' + createdDate + '}). Players: ' + useCachedPlayerCount(server.main_ip)
+    message = 'Server is on. (since {' + createdDate + '}). Address: ' + server.main_ip +  ' Players: ' + useCachedPlayerCount(server.main_ip)
     actionsAllowed = 'stop'
   } else if (server) {
-    message = `Server is starting up. Status: ${server.status}, state: ${server.server_state}`
+    message = `Server is starting up. Status: ${server.status}, state: ${server.server_state}, address:  ${server.main_ip}`
     actionsAllowed = 'none'
     if (server.server_state === 'installingbooting') {
       // Special case: Vultr servers report 'installingbooting' for minutes after Minecraft has actually started!
@@ -80,7 +80,7 @@ async function checkAndStartServer () {
     return log
   }
 
-  log.push('Creating server.')
+  log.push('Creating server at ' + reservedIp)
   await vultrInstance.server.create({
     startupscript: scriptID,
     os: '270', // OSID, 270 is ubuntu 18.04 LTS
@@ -91,6 +91,7 @@ async function checkAndStartServer () {
     reserved_ip_v4: reservedIp
   }).catch(e => {
     log.push(e)
+    console.log(e)
   })
   return log
 }
