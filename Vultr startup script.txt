@@ -65,3 +65,6 @@ systemctl enable minecraft
 
 # you might have to make some things executable? I didn't?
 # chmod +x /home/minecraft/sync/whatever
+
+# open firewall for minecraft
+sudo ufw allow 25565
