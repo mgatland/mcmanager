@@ -18,9 +18,9 @@
   },
   "homepage": "https://github.com/mgatland/mcmanager#readme",
   "dependencies": {
-    "body-parser": "^1.18.3",
+    "body-parser": "^1.20.1",
     "dotenv": "^8.0.0",
-    "express": "^4.16.4",
+    "express": "^4.18.2",
     "mc-server-status": "^0.2.0",
     "node-fetch": "^2.6.6",
     "node-ssh": "^12.0.2",
